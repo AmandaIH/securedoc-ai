@@ -53,7 +53,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6 font-sans">
-      {/* Top Header */}
       <header className="max-w-7xl mx-auto mb-8 border-b border-slate-800 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -67,7 +66,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Security Status Badges */}
         <div className="flex items-center gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs">
           <div className="flex items-center gap-1.5 text-emerald-400">
             <Lock className="w-4 h-4" />
@@ -82,7 +80,6 @@ export default function Home() {
       </header>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Venstre side: Upload & Anonymisering */}
         <section className="lg:col-span-5 flex flex-col gap-6">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-slate-200">
@@ -126,7 +123,6 @@ export default function Home() {
               </button>
             </form>
 
-            {/* Upload Feedback / Security Audit */}
             {uploadStatus && (
               <div className={`mt-4 p-4 rounded-xl border text-xs ${
                 uploadStatus.error 
@@ -164,7 +160,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* Quick Demo Controls */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-xs">
             <h3 className="font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
@@ -182,7 +177,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Højre side: Streaming AI Chat */}
         <section className="lg:col-span-7 flex flex-col h-[650px] bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center">
             <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
@@ -192,7 +186,6 @@ export default function Home() {
             <span className="text-xs text-slate-500">Model: GPT-4o-mini + Guardrails</span>
           </div>
 
-          {/* Chat Beskeder */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4">
             {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs text-center p-6">
@@ -225,7 +218,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Chat Input */}
           <form onSubmit={handleSubmit} className="p-3 border-t border-slate-800 bg-slate-950/50 flex gap-2">
             <input
               value={input}
