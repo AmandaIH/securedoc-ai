@@ -1,16 +1,16 @@
 ﻿import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 function createDummyEmbedding(dim = 768): number[] {
   return new Array(dim).fill(0.01);
 }
 
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const contentType = req.headers.get("content-type") || "";
     let text = "";
     let documentName = "Dokument";
@@ -28,17 +28,14 @@ export async function POST(req: Request) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // Udtræk læselige tegn direkte fra filen (sikrer mod DOMMatrix/PDF-parser krasj)
       const rawString = buffer.toString("utf-8");
 
-      // Filtrer PDF stream-objekter og find læselig tekst
       const matches = rawString.match(/\((.*?)\)\s*Tj/g);
       if (matches && matches.length > 0) {
         text = matches.map(m => m.replace(/^\(/, "").replace(/\)\s*Tj$/, "")).join(" ");
       }
 
       if (!text || text.trim().length < 10) {
-        // Fallback: Rens generelle binære tegn ud
         text = rawString.replace(/[^\x20-\x7E\xC0-\xFF\n\r\t]/g, " ").replace(/\s+/g, " ").trim();
       }
 
@@ -87,7 +84,6 @@ export async function POST(req: Request) {
       embedding: dummyEmbedding,
     }));
 
-    // Slet gamle chunks for rent miljø
     await supabase.from("document_chunks").delete().neq("id", 0);
 
     const { error: insertError } = await supabase.from("document_chunks").insert(rowsToInsert);
