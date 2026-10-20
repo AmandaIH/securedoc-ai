@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const { messages } = await req.json();
     const lastUserMessage = messages?.[messages.length - 1]?.content || "";
 
@@ -33,7 +33,6 @@ export async function POST(req: Request) {
     const lowerMsg = lastUserMessage.toLowerCase();
     let replyText = "";
 
-    // Intelligente, professionelle svar til din jobsøgning og demo
     if (lowerMsg.includes("cpr") || lowerMsg.includes("nummer")) {
       replyText = `Sikkerhedsstatus for dokument (**${docName}**): **[SLØRET]**\n\nSecureDoc AI har automatisk detekteret og fjernet det følsomme CPR-nummer i henhold til GDPR-retningslinjerne for at beskytte personoplysninger. Feltet er erstattet med \`[SLØRET CPR]\` i databasen.`;
     } else if (lowerMsg.includes("punkt") || lowerMsg.includes("overordnede") || lowerMsg.includes("kontrakt") || lowerMsg.includes("om")) {
