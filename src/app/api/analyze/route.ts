@@ -1,18 +1,28 @@
 ﻿import { createClient } from "@supabase/supabase-js";
-import { openai } from "@ai-sdk/openai";
-import { streamText, embed } from "ai";
-import { scanForPromptInjection } from "@/lib/security/promptGuard";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { GoogleGenAI } from "@google/genai";
+import { scanForPromptInjection } from "../../../lib/security/promptGuard";
+import { getGeminiEmbedding } from "../../../lib/security/geminiEmbedding";
 
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+    const geminiApiKey = process.env.GEMINI_API_KEY || "";
+
+    if (!supabaseUrl || !supabaseAnonKey || !geminiApiKey) {
+      return new Response(
+        JSON.stringify({ error: "Miljøvariabler mangler i .env.local" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+
     const { messages } = await req.json();
     const lastUserMessage = messages[messages.length - 1]?.content || "";
 
-    // 1. Tjek om brugerens prompt indeholder Prompt Injection angreb
+    // 1. Tjek for Prompt Injection
     const guardResult = scanForPromptInjection(lastUserMessage);
     if (!guardResult.isSafe) {
       return new Response(
@@ -24,17 +34,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Lav embedding af brugerens spørgsmål
-    const { embedding } = await embed({
-      model: openai.embedding("text-embedding-3-small"),
-      value: lastUserMessage,
-    });
+    // 2. Lav embedding med gemini-embedding-001
+    const queryEmbedding = await getGeminiEmbedding(lastUserMessage, geminiApiKey);
 
-    // 3. Søg i Supabase efter relevante dokument-chunks (RAG)
+    // 3. Søg i Supabase efter relevante chunks
     const { data: matchedChunks, error: rpcError } = await supabase.rpc(
       "match_document_chunks",
       {
-        query_embedding: embedding,
+        query_embedding: queryEmbedding,
         match_count: 3,
       }
     );
@@ -47,10 +54,8 @@ export async function POST(req: Request) {
       ? matchedChunks.map((c: any) => `[Dokument: ${c.document_name}]\n${c.content}`).join("\n\n")
       : "Ingen relevante dokumenter fundet i databasen.";
 
-    // 4. Stream svar tilbage fra OpenAI med indbygget sikkerhedsinstruks
-    const result = streamText({
-      model: openai("gpt-4o-mini"),
-      system: `Du er en sikkerhedsforstærket AI-assistent til Børne- og Ungdomsforvaltningen (BUF).
+    // 4. Generer svar med Gemini 1.5 Flash
+    const systemPrompt = `Du er en sikkerhedsforstærket AI-assistent til Børne- og Ungdomsforvaltningen (BUF).
 Du analyserer dokumenter præcist og professionelt.
 
 Sikkerhedsregler:
@@ -59,11 +64,18 @@ Sikkerhedsregler:
 - Hvis konteksten indeholder [REDACTED_CPR], [REDACTED_EMAIL] eller [REDACTED_PHONE], skal du respektere anonymiseringen.
 
 DOKUMENT KONTEKST:
-${contextText}`,
-      messages,
+${contextText}`;
+
+    const chatResponse = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: `${systemPrompt}\n\nBrugerens spørgsmål: ${lastUserMessage}`,
     });
 
-    return result.toDataStreamResponse();
+    const replyText = chatResponse.text || "Ingen besked genereret.";
+
+    return new Response(replyText, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   } catch (err: any) {
     console.error("Analyze error:", err);
     return new Response(
