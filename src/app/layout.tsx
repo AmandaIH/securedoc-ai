@@ -13,7 +13,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "SecureDoc AI - BUF Enterprise",
+  title: "SecureDoc AI",
   description: "Sikker AI-dokumentanalyse med automatisk anonymisering",
 };
 
