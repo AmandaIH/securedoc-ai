@@ -1,7 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = 'force-dynamic';
 
 function createDummyEmbedding(dim = 768): number[] {
   return new Array(dim).fill(0.01);
